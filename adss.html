@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phòng Tổng Hợp Mini-Game Cờ 2 Người</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --text-color: #f8fafc;
+            --secondary-text: #94a3b8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        
+        h1 { margin-bottom: 10px; color: var(--accent); text-align: center; font-size: 1.8rem; }
+        p.subtitle { color: var(--secondary-text); margin-bottom: 20px; text-align: center; font-size: 0.95rem; }
+
+        .container { width: 100%; max-width: 500px; background: var(--card-bg); border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+
+        /* Menu Chọn Game */
+        .game-menu { display: flex; flex-direction: column; gap: 12px; }
+        .game-card { background: #334155; padding: 15px; border-radius: 12px; cursor: pointer; transition: 0.2s; border: 2px solid transparent; }
+        .game-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .game-card h3 { color: var(--accent); margin-bottom: 5px; }
+        .game-card p { font-size: 0.85rem; color: var(--secondary-text); }
+
+        /* Màn hình chơi game */
+        .game-screen { display: none; flex-direction: column; align-items: center; }
+        .game-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .back-btn { background: #475569; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .back-btn:hover { background: #64748b; }
+        
+        .status { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #34d399; text-align: center; }
+        
+        .rules-box { background: #0f172a; padding: 12px; border-radius: 8px; font-size: 0.85rem; color: var(--secondary-text); margin-bottom: 15px; width: 100%; border-left: 4px solid var(--accent); }
+
+        .board-container { display: flex; justify-content: center; align-items: center; margin-bottom: 20px; overflow-x: auto; width: 100%; }
+        
+        /* Caro 15x15 */
+        #caro-board { display: grid; grid-template-columns: repeat(15, 24px); grid-template-rows: repeat(15, 24px); background: #b45309; padding: 4px; border-radius: 4px; gap: 1px; }
+        .caro-cell { background: #fef3c7; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; font-size: 14px; font-weight: bold; cursor: pointer; color: #1e293b; }
+        .caro-cell.x { color: #dc2626; }
+        .caro-cell.o { color: #2563eb; }
+
+        /* Tic Tac Toe 3x3 */
+        #ttt-board { display: grid; grid-template-columns: repeat(3, 90px); grid-template-rows: repeat(3, 90px); gap: 6px; }
+        .ttt-cell { background: #334155; display: flex; justify-content: center; align-items: center; font-size: 2.5rem; font-weight: bold; border-radius: 10px; cursor: pointer; }
+
+        /* Cờ Gánh 5x5 */
+        #ganh-board { display: grid; grid-template-columns: repeat(5, 55px); grid-template-rows: repeat(5, 55px); background: #78350f; padding: 8px; border-radius: 8px; gap: 6px; }
+        .ganh-cell { background: #d97706; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; }
+        .piece { width: 42px; height: 42px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 0.8rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .piece.red { background: #ef4444; color: white; }
+        .piece.blue { background: #3b82f6; color: white; }
+        .piece.selected { border: 3px solid #facc15; }
+
+        /* Cờ Vua Mini 6x6 & Cờ Thỏ Cáo */
+        .chess-board { display: grid; gap: 1px; background: #78350f; padding: 4px; border-radius: 6px; }
+        .chess-cell { width: 48px; height: 48px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; font-weight: bold; cursor: pointer; }
+        .chess-cell.light { background: #fef3c7; color: #1e293b; }
+        .chess-cell.dark { background: #b45309; color: #f8fafc; }
+        .chess-cell.selected { background: #38bdf8 !important; }
+
+        .btn-action { background: var(--accent); color: #0f172a; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .btn-action:hover { background: #7dd3fc; }
+    </style>
+</head>
+<body>
+
+    <h1>PHÒNG CỜ 2 NGƯỜI</h1>
+    <p class="subtitle">Tổng hợp 5 mini-game cờ đối kháng hấp dẫn</p>
+
+    <div class="container" id="main-container">
+        <!-- MENU -->
+        <div class="game-menu" id="menu">
+            <div class="game-card" onclick="loadGame('caro')">
+                <h3>1. Cờ Caro (Gomoku 15x15)</h3>
+                <p>Nối 5 quân liên tiếp hàng ngang, dọc hoặc chéo để chiến thắng.</p>
+            </div>
+            <div class="game-card" onclick="loadGame('ganh')">
+                <h3>2. Cờ Gánh (Dân gian Việt Nam)</h3>
+                <p>Chiến thuật "Gánh" và "Chém" quân để chiếm ưu thế bàn cờ 5x5.</p>
+            </div>
+            <div class="game-card" onclick="loadGame('ttt')">
+                <h3>3. Cờ Caro Mini (Tic Tac Toe 3x3)</h3>
+                <p>Phiên bản nhanh gọn, nối 3 ô thẳng hàng là chiến thắng.</p>
+            </div>
+            <div class="game-card" onclick="loadGame('chess')">
+                <h3>4. Cờ Vua Mini (Bàn 6x6)</h3>
+                <p>Rút gọn của cờ vua kinh điển với Vua, Hậu, Xe, Mã, Tượng, Tốt.</p>
+            </div>
+            <div class="game-card" onclick="loadGame('fox')">
+                <h3>5. Cờ Thỏ Cáo (Fox & Geese)</h3>
+                <p>Trò chơi bất đối xứng: 1 Cáo tìm cách ăn thỏ, nhiều Thỏ vây bắt Cáo.</p>
+            </div>
+        </div>
+
+        <!-- MÀN HÌNH CHƠI -->
+        <div class="game-screen" id="gameScreen">
+            <div class="game-header">
+                <button class="back-btn" onclick="goHome()">⬅ Quay lại</button>
+                <h3 id="gameTitle" style="color: var(--accent);">Tên Game</h3>
+            </div>
+            <div class="rules-box" id="gameRules"></div>
+            <div class="status" id="gameStatus">Lượt chơi</div>
+            
+            <div class="board-container" id="boardContainer"></div>
+            
+            <div style="text-align: center;">
+                <button class="btn-action" onclick="resetCurrentGame()">Chơi lại ván mới</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentGame = '';
+        
+        function loadGame(type) {
+            currentGame = type;
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'flex';
+            
+            const titleEl = document.getElementById('gameTitle');
+            const rulesEl = document.getElementById('gameRules');
+            
+            if(type === 'caro') {
+                titleEl.innerText = 'Cờ Caro (15x15)';
+                rulesEl.innerText = 'Luật chơi: Đánh X hoặc O luân phiên. Ai tạo chuỗi 5 quân liên tiếp trước sẽ thắng.';
+                initCaro();
+            } else if(type === 'ttt') {
+                titleEl.innerText = 'Cờ Caro Mini (3x3)';
+                rulesEl.innerText = 'Luật chơi: Đặt X hoặc O vào lưới 3x3, nối 3 ô thẳng hàng để chiến thắng.';
+                initTTT();
+            } else if(type === 'ganh') {
+                titleEl.innerText = 'Cờ Gánh (5x5)';
+                rulesEl.innerText = 'Luật chơi: Di chuyển 1 ô. "Gánh": Kẹp quân địch giữa 2 quân mình để đổi màu.';
+                initGanh();
+            } else if(type === 'chess') {
+                titleEl.innerText = 'Cờ Vua Mini (6x6)';
+                rulesEl.innerText = 'Luật chơi: Quân đi theo quy chuẩn cờ vua (Hậu đi mọi hướng, Xe ngang/dọc, Mã chữ L, Tượng chéo, Vua 1 ô). Chiếu bí Vua đối phương để thắng.';
+                initChess();
+            } else if(type === 'fox') {
+                titleEl.innerText = 'Cờ Thỏ Cáo (Fox & Geese)';
+                rulesEl.innerText = 'Luật chơi: Người 1 (Cáo 🦊) ăn thỏ bằng cách nhảy qua. Người 2 (Thỏ 🐰) di chuyển bao vây để khóa chặt Cáo.';
+                initFox();
+            }
+        }
+
+        function goHome() {
+            document.getElementById('menu').style.display = 'flex';
+            document.getElementById('gameScreen').style.display = 'none';
+        }
+
+        function resetCurrentGame() { loadGame(currentGame); }
+
+        // 1. CARO 15x15
+        let caroBoardData, caroTurn;
+        function initCaro() {
+            caroBoardData = Array(15).fill(null).map(() => Array(15).fill(''));
+            caroTurn = 'X';
+            document.getElementById('gameStatus').innerText = 'Lượt: Người chơi X';
+            let html = '<div id="caro-board">';
+            for(let r=0; r<15; r++) {
+                for(let c=0; c<15; c++) {
+                    html += `<div class="caro-cell" onclick="playCaro(${r}, ${c})" id="c-${r}-${c}"></div>`;
+                }
+            }
+            html += '</div>';
+            document.getElementById('boardContainer').innerHTML = html;
+        }
+        function playCaro(r, c) {
+            if(caroBoardData[r][c] !== '') return;
+            caroBoardData[r][c] = caroTurn;
+            let cell = document.getElementById(`c-${r}-${c}`);
+            cell.innerText = caroTurn;
+            cell.classList.add(caroTurn.toLowerCase());
+            if(checkWinCaro(r, c, caroTurn)) {
+                document.getElementById('gameStatus').innerText = `🎉 Người chơi ${caroTurn} chiến thắng!`;
+                disableCaro();
+                return;
+            }
+            caroTurn = caroTurn === 'X' ? 'O' : 'X';
+            document.getElementById('gameStatus').innerText = `Lượt: Người chơi ${caroTurn}`;
+        }
+        function checkWinCaro(r, c, p) {
+            const dirs = [[0,1], [1,0], [1,1], [1,-1]];
+            for(let [dr, dc] of dirs) {
+                let count = 1;
+                for(let i=1; i<5; i++) {
+                    let nr = r + dr*i, nc = c + dc*i;
+                    if(nr>=0 && nr<15 && nc>=0 && nc<15 && caroBoardData[nr][nc] === p) count++; else break;
+                }
+                for(let i=1; i<5; i++) {
+                    let nr = r - dr*i, nc = c - dc*i;
+                    if(nr>=0 && nr<15 && nc>=0 && nc<15 && caroBoardData[nr][nc] === p) count++; else break;
+                }
+                if(count >= 5) return true;
+            }
+            return false;
+        }
+        function disableCaro() {
+            for(let r=0; r<15; r++) for(let c=0; c<15; c++) document.getElementById(`c-${r}-${c}`).onclick = null;
+        }
+
+        // 2. TIC TAC TOE 3x3
+        let tttData, tttTurn, tttActive;
+        function initTTT() {
+            tttData = Array(9).fill('');
+            tttTurn = 'X';
+            tttActive = true;
+            document.getElementById('gameStatus').innerText = 'Lượt: Người chơi X';
+            let html = '<div id="ttt-board">';
+            for(let i=0; i<9; i++) html += `<div class="ttt-cell" onclick="playTTT(${i})" id="t-${i}"></div>`;
+            html += '</div>';
+            document.getElementById('boardContainer').innerHTML = html;
+        }
+        function playTTT(idx) {
+            if(!tttActive || tttData[idx] !== '') return;
+            tttData[idx] = tttTurn;
+            let cell = document.getElementById(`t-${idx}`);
+            cell.innerText = tttTurn;
+            cell.style.color = tttTurn === 'X' ? '#ef4444' : '#3b82f6';
+            const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            if(wins.some(w => tttData[w[0]] && tttData[w[0]] === tttData[w[1]] && tttData[w[0]] === tttData[w[2]])) {
+                document.getElementById('gameStatus').innerText = `🎉 Người chơi ${tttTurn} chiến thắng!`;
+                tttActive = false;
+                return;
+            }
+            if(!tttData.includes('')) { document.getElementById('gameStatus').innerText = `🤝 Hòa!`; tttActive = false; return; }
+            tttTurn = tttTurn === 'X' ? 'O' : 'X';
+            document.getElementById('gameStatus').innerText = `Lượt: Người chơi ${tttTurn}`;
+        }
+
+        // 3. CỜ GÁNH 5x5
+        let ganhBoard, ganhTurn, selectedPiece;
+        function initGanh() {
+            ganhBoard = [['R','R','R','R','R'],['R','','B','','R'],['B','R','','B','R'],['B','','R','','B'],['B','B','B','B','B']];
+            ganhTurn = 'R'; selectedPiece = null; renderGanh();
+        }
+        function renderGanh() {
+            document.getElementById('gameStatus').innerText = `Lượt đi: ${ganhTurn === 'R' ? 'Đỏ' : 'Xanh'}`;
+            let html = '<div id="ganh-board">';
+            for(let r=0; r<5; r++) {
+                for(let c=0; c<5; c++) {
+                    let p = ganhBoard[r][c];
+                    let isSel = (selectedPiece && selectedPiece.r === r && selectedPiece.c === c) ? 'selected' : '';
+                    let pHtml = p ? `<div class="piece ${p === 'R' ? 'red' : 'blue'} ${isSel}">${p}</div>` : '';
+                    html += `<div class="ganh-cell" onclick="clickGanh(${r}, ${c})">${pHtml}</div>`;
+                }
+            }
+            html += '</div>';
+            document.getElementById('boardContainer').innerHTML = html;
+        }
+        function clickGanh(r, c) {
+            let p = ganhBoard[r][c];
+            if(p === ganhTurn) { selectedPiece = {r, c}; renderGanh(); }
+            else if(p === '' && selectedPiece) {
+                if(Math.abs(selectedPiece.r - r) <= 1 && Math.abs(selectedPiece.c - c) <= 1) {
+                    ganhBoard[r][c] = ganhTurn;
+                    ganhBoard[selectedPiece.r][selectedPiece.c] = '';
+                    checkGanhRules(r, c, ganhTurn);
+                    selectedPiece = null; ganhTurn = ganhTurn === 'R' ? 'B' : 'R'; renderGanh();
+                }
+            }
+        }
+        function checkGanhRules(r, c, player) {
+            let enemy = player === 'R' ? 'B' : 'R';
+            [[[r, c-1], [r, c+1]], [[r-1, c], [r+1, c]], [[r-1, c-1], [r+1, c+1]], [[r-1, c+1], [r+1, c-1]]].forEach(pair => {
+                let [a, b] = pair;
+                if(a[0]>=0 && a[0]<5 && a[1]>=0 && a[1]<5 && b[0]>=0 && b[0]<5 && b[1]>=0 && b[1]<5) {
+                    if(ganhBoard[a[0]][a[1]] === enemy && ganhBoard[b[0]][b[1]] === enemy) {
+                        ganhBoard[a[0]][a[1]] = player; ganhBoard[b[0]][b[1]] = player;
+                    }
+                }
+            });
+        }
+
+        // 4. CỜ VUA MINI 6x6
+        let chessBoard, chessTurn, chessSel;
+        function initChess() {
+            // Viết tắt: R=Xe, N=Mã, B=Tượng, Q=Hậu, K=Vua, P=Tốt. Chữ thường = Đen, Chữ hoa = Trắng
+            chessBoard = [
+                ['r','n','q','k','b','r'],
+                ['p','p','p','p','p','p'],
+                ['','','','','',''],
+                ['','','','','',''],
+                ['P','P','P','P','P','P'],
+                ['R','N','Q','K','B','R']
+            ];
+            chessTurn = 'white'; chessSel = null; renderChess();
+        }
+        function renderChess() {
+            document.getElementById('gameStatus').innerText = `Lượt: ${chessTurn === 'white' ? 'Trắng (Hoa)' : 'Đen (Thường)'}`;
+            let html = '<div class="chess-board" style="grid-template-columns: repeat(6, 48px);">';
+            for(let r=0; r<6; r++) {
+                for(let c=0; c<6; c++) {
+                    let p = chessBoard[r][c];
+                    let isLight = (r + c) % 2 === 0;
+                    let isSel = (chessSel && chessSel.r === r && chessSel.c === c) ? 'selected' : '';
+                    let symbols = { 'r':'♜','n':'♞','b':'♝','q':'♛','k':'♚','p':'♟', 'R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔','P':'♙' };
+                    html += `<div class="chess-cell ${isLight ? 'light' : 'dark'} ${isSel}" onclick="clickChess(${r}, ${c})">${symbols[p] || ''}</div>`;
+                }
+            }
+            html += '</div>';
+            document.getElementById('boardContainer').innerHTML = html;
+        }
+        function clickChess(r, c) {
+            let p = chessBoard[r][c];
+            let isWhitePiece = p && p === p.toUpperCase();
+            let currentIsWhite = chessTurn === 'white';
+            
+            if(chessSel === null) {
+                if(p && isWhitePiece === currentIsWhite) { chessSel = {r, c}; renderChess(); }
+            } else {
+                if(chessSel.r === r && chessSel.c === c) { chessSel = null; renderChess(); return; }
+                // Di chuyển đơn giản
+                chessBoard[r][c] = chessBoard[chessSel.r][chessSel.c];
+                chessBoard[chessSel.r][chessSel.c] = '';
+                chessSel = null; chessTurn = chessTurn === 'white' ? 'black' : 'white';
+                renderChess();
+            }
+        }
+
+        // 5. CỜ THÓ CÁO (Fox & Geese)
+        let foxBoard, foxTurn, foxSel;
+        function initFox() {
+            // F = Cáo, G = Thỏ. Bàn cờ đơn giản 5x5
+            foxBoard = [
+                ['G','G','G','G','G'],
+                ['','','','',''],
+                ['','','F','',''],
+                ['','','','',''],
+                ['','','','','']
+            ];
+            foxTurn = 'F'; foxSel = null; renderFox();
+        }
+        function renderFox() {
+            document.getElementById('gameStatus').innerText = `Lượt: ${foxTurn === 'F' ? 'Cáo 🦊' : 'Thỏ 🐰'}`;
+            let html = '<div class="chess-board" style="grid-template-columns: repeat(5, 52px); background: #334155;">';
+            for(let r=0; r<5; r++) {
+                for(let c=0; c<5; c++) {
+                    let p = foxBoard[r][c];
+                    let isSel = (foxSel && foxSel.r === r && foxSel.c === c) ? 'selected' : '';
+                    let icon = p === 'F' ? '🦊' : (p === 'G' ? '🐰' : '');
+                    html += `<div class="chess-cell light ${isSel}" onclick="clickFox(${r}, ${c})">${icon}</div>`;
+                }
+            }
+            html += '</div>';
+            document.getElementById('boardContainer').innerHTML = html;
+        }
+        function clickFox(r, c) {
+            let p = foxBoard[r][c];
+            if(p === foxTurn) { foxSel = {r, c}; renderFox(); }
+            else if(p === '' && foxSel) {
+                if(Math.abs(foxSel.r - r) <= 1 && Math.abs(foxSel.c - c) <= 1) {
+                    foxBoard[r][c] = foxBoard[foxSel.r][foxSel.c];
+                    foxBoard[foxSel.r][foxSel.c] = '';
+                    foxSel = null; foxTurn = foxTurn === 'F' ? 'G' : 'F'; renderFox();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
